@@ -16,7 +16,7 @@ conda create -n morpho pip python=3.8 && conda activate morpho && pip install -r
 
 ## Test
 | Experiment | Script Locations |
-| -------- | -------- | -------- |
+| -------- | -------- |
 | **Experiment 1** | `scripts/experiment_1` |
 | **Experiment 2** | `scripts/experiment_2` |
 | **Eval SAM** | `scripts/sam` |
