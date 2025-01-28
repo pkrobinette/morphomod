@@ -13,6 +13,8 @@ conda create -n morpho pip python=3.8 && conda activate morpho && pip install -r
    b. LOGO-Gray, LOGO-L, and LOGO-H from [here](https://github.com/vinthony/deep-blind-watermark-removal#Resources).
 
    c. Alpha1-S and Alpha1-L: *(Due to anonymity, this will be provided for the final publication.)*
+   
+   d. Disorient: *(Due to anonymity, this will be provided for the final publication.)*
 
 ## Test
 | Experiment | Script Locations |
