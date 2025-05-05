@@ -22,6 +22,7 @@ import lpips
 import json
 from torchvision.utils import save_image
 from models import Dilate
+import gc
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(DEVICE)
@@ -97,14 +98,13 @@ def norm(input):
     input = 2*input - 1
     return input
 
-
 def main(args):
     #
     # load dataset
     #
     dataloader = get_dataset("test", args)
     #
-    # Load models
+    # load model
     #
     model = utils.load_model(
         model_type=args.model_type, 
@@ -113,7 +113,7 @@ def main(args):
         inpaint=args.inpaint_mod
     ).to(DEVICE)
     #
-    # Create folders for save
+    # create folders
     #
     utils.pprint_args(args)
     args.expr_path += "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -122,82 +122,68 @@ def main(args):
     for folder in ["wm", "mask", "gen_mask", "imfinal", "raw_out", "fill_x"]:
         os.makedirs(osp.join(args.expr_path, "_images", folder))
     #
-    # Run
-    # 
+    # metrics
+    #
     rmsesw = AverageMeter()
     ssimsw = AverageMeter()
     psnrsw = AverageMeter()
     lpipsw = AverageMeter()
-    
+
     epsilon = 1e-10
     loss_fn_alex = lpips.LPIPS(net='alex').to(DEVICE)
     model.eval()
     cnt = 0
-    
+
     for batch in tqdm.tqdm(dataloader):
-        # load the images
         wm = batch['image'].to(DEVICE)
         mask = batch['mask'].to(DEVICE)
-        #
-        # Calc imfinal
-        #
+
         if "morphomod" in args.model_type:
             imfinal, immask, raw_out, fill_x = model.forward_w_gt(
-                wm, 
-                mask, 
-                args.dilate, 
-                args.prompt, 
-                fill=args.fill,
-                num_steps=args.num_steps
+                wm, mask, args.dilate, args.prompt,
+                fill=args.fill, num_steps=args.num_steps
             )
         else:
             raise ValueError("whoops wrong model.")
-        #
-        # Get the W results
-        #
+
         for w_im, imf_im, m_im in zip(wm, imfinal, mask):
-          w_im = w_im.unsqueeze(0)
-          imf_im = imf_im.unsqueeze(0)
-          m_im = m_im.unsqueeze(0)
-          non_zero_indices = torch.nonzero(m_im[0, 0], as_tuple=False)  # Only work on the first channel
-          if non_zero_indices.numel() == 0:
-            continue
-          min_y, min_x = non_zero_indices.min(dim=0).values
-          max_y, max_x = non_zero_indices.max(dim=0).values
-          wm_cropped = w_im[:, :, min_y:max_y + 1, min_x:max_x + 1]
-          imfinal_cropped = imf_im[:, :, min_y:max_y + 1, min_x:max_x + 1]
-          mask_cropped = m_im[:, :, min_y:max_y + 1, min_x:max_x + 1]
+            w_im = w_im.unsqueeze(0)
+            imf_im = imf_im.unsqueeze(0)
+            m_im = m_im.unsqueeze(0)
+            non_zero_indices = torch.nonzero(m_im[0, 0], as_tuple=False)
+            if non_zero_indices.numel() == 0:
+                continue
+            min_y, min_x = non_zero_indices.min(dim=0).values
+            max_y, max_x = non_zero_indices.max(dim=0).values
+            wm_cropped = w_im[:, :, min_y:max_y + 1, min_x:max_x + 1]
+            imfinal_cropped = imf_im[:, :, min_y:max_y + 1, min_x:max_x + 1]
+            mask_cropped = m_im[:, :, min_y:max_y + 1, min_x:max_x + 1]
 
-          imfinal_wmr = imfinal_cropped * mask_cropped
-          wm_wmr = wm_cropped * mask_cropped
+            imfinal_wmr = imfinal_cropped * mask_cropped
+            wm_wmr = wm_cropped * mask_cropped
 
-          #
-          # calculate all metrics
-          #
-          with torch.no_grad():
-            # cropped metrics = [lpips, ssim, psnr]
-            im_lpip = norm(imfinal_wmr)
-            tar_lpip = norm(wm_wmr)
-            try:
-              lpipwx = loss_fn_alex(im_lpip, tar_lpip).mean().item()
-            except:
-              min_size = 32
-              newh = max(min_size, im_lpip.shape[2])
-              neww = max(min_size, im_lpip.shape[3])
-              im_lpip = F.interpolate(im_lpip, size=(newh, neww), mode='bilinear', align_corners=False)
-              tar_lpip = F.interpolate(tar_lpip, size=(newh, neww), mode='bilinear', align_corners=False)
-              lpipwx = loss_fn_alex(im_lpip, tar_lpip).mean().item()
-            psnrwx = 10 * log10(1 / (F.mse_loss(imfinal_wmr, wm_wmr).item()+epsilon))
-            ssimwx = pytorch_ssim.ssim(imfinal_wmr, wm_wmr).item()
-            rmsewx = compute_RMSE(imfinal_wmr, wm_wmr, mask_cropped, is_w=True) / 256
+            with torch.no_grad():
+                im_lpip = norm(imfinal_wmr)
+                tar_lpip = norm(wm_wmr)
+                try:
+                    lpipwx = loss_fn_alex(im_lpip, tar_lpip).mean().item()
+                except:
+                    min_size = 32
+                    newh = max(min_size, im_lpip.shape[2])
+                    neww = max(min_size, im_lpip.shape[3])
+                    im_lpip = F.interpolate(im_lpip, size=(newh, neww), mode='bilinear', align_corners=False)
+                    tar_lpip = F.interpolate(tar_lpip, size=(newh, neww), mode='bilinear', align_corners=False)
+                    lpipwx = loss_fn_alex(im_lpip, tar_lpip).mean().item()
 
-            rmsesw.update(rmsewx, 1)
-            ssimsw.update(ssimwx, 1)
-            psnrsw.update(psnrwx, 1)
-            lpipsw.update(lpipwx, 1)
-        #
-        # save all images
-        #
+                psnrwx = 10 * log10(1 / (F.mse_loss(imfinal_wmr, wm_wmr).item() + epsilon))
+                ssimwx = pytorch_ssim.ssim(imfinal_wmr, wm_wmr).item()
+                rmsewx = compute_RMSE(imfinal_wmr, wm_wmr, mask_cropped, is_w=True) / 256
+
+                rmsesw.update(rmsewx, 1)
+                ssimsw.update(ssimwx, 1)
+                psnrsw.update(psnrwx, 1)
+                lpipsw.update(lpipwx, 1)
+
         for im, m, gen_m, fin, raw, fx in zip(wm, mask, immask, imfinal, raw_out, fill_x):
             save_image(m.float(), osp.join(args.expr_path, "_images", "mask", f"{cnt}.png"))
             save_image(gen_m.float(), osp.join(args.expr_path, "_images", "gen_mask", f"{cnt}.png"))
@@ -206,22 +192,32 @@ def main(args):
             save_image(raw, osp.join(args.expr_path, "_images", "raw_out", f"{cnt}.jpg"))
             save_image(fx, osp.join(args.expr_path, "_images", "fill_x", f"{cnt}.jpg"))
             cnt += 1
+        #
+        # release memory
+        #
+        del wm, mask, imfinal, immask, raw_out, fill_x, batch, w_im, imf_im, m_im
+        del wm_cropped, imfinal_cropped, mask_cropped
+        del imfinal_wmr, wm_wmr, im_lpip, tar_lpip
+        torch.cuda.empty_cache()
+        gc.collect()
+    #
+    # save results
+    #
+    results = {
+        "rmsew": rmsesw.avg,
+        "ssimw": ssimsw.avg,
+        "psnrw": psnrsw.avg,
+        "lpipw": lpipsw.avg,
+        "prompt": args.prompt,
+        "dilate": args.dilate,
+        "fill": args.fill,
+    }
 
-    # record resutls
-    results = {}
-    results["rmsew"] = rmsesw.avg
-    results["ssimw"] = ssimsw.avg
-    results["psnrw"] = psnrsw.avg
-    results["lpipw"] = lpipsw.avg
-    results["prompt"] = args.prompt
-    results["dilate"] = args.dilate
-    results['fill'] = args.fill
-
-    # save everything
     with open(os.path.join(args.expr_path, f'{args.dataset}_{args.inpaint_mod}_metrics.json'), 'w') as file:
-      json.dump(results, file, indent=4)
+        json.dump(results, file, indent=4)
 
     print(results)
+
 
 
 if __name__ == "__main__":
