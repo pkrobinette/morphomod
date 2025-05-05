@@ -15,7 +15,7 @@ RCHECK="/content/drive/MyDrive/HYDRA/train_refine_mask/CLWD_mask_refine/model/CL
 # model type
 M="morphomod_slbr"
 # fill type
-INPAINTMOD="SDXL"
+INPAINTMOD="FLUX"
 
 
 python src/eval_models.py \
@@ -27,7 +27,9 @@ python src/eval_models.py \
     --model_type ${M} \
     --dilate ${DILATE} \
     --prompt "${PROMPT}" \
-    --inpaint_mod "${INPAINTMOD}"
+    --inpaint_mod "${INPAINTMOD}" \
+    --batch_size 1 \
+    --num_samples 100
     
 
 DATASET="CLWD"
@@ -41,7 +43,9 @@ python src/eval_models.py \
     --model_type ${M} \
     --dilate ${DILATE} \
     --prompt "${PROMPT}" \
-    --inpaint_mod "${INPAINTMOD}"
+    --inpaint_mod "${INPAINTMOD}" \
+    --batch_size 1 \
+    --num_samples 100
 
 
 

@@ -22,7 +22,7 @@ class AlphaDataset(torch.utils.data.Dataset):
         
         self.ids = list()
         for file in os.listdir(osp.join(self.root_main, 'image')):
-            self.ids.append(file.strip('.jpg'))
+            self.ids.append(int(file.strip('.jpg')))
             
         self.transform_tensor = T.Compose([
             T.Resize((256, 256)),

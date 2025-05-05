@@ -50,7 +50,7 @@ class CLWDDataset(torch.utils.data.Dataset):
 		
         self.ids = list()
         for file in os.listdir(self.root_main+'Watermarked_image'):
-            self.ids.append(file.strip('.jpg'))
+            self.ids.append(int(file.strip('.jpg')))
         cv2.setNumThreads(0)
         cv2.ocl.setUseOpenCL(False)
         #
@@ -119,7 +119,7 @@ class CLWDDataset(torch.utils.data.Dataset):
                 'image': J,
                 'target': I,
                 'mask': mask,
-                'img_path':sample['img_path']
+                'img_path':sample['img_path'],
                 'id': sample['id']
             }
             
