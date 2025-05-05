@@ -1,10 +1,8 @@
-# from .COCO import COCO
-# from .BIH import BIH
 from .clwd_dataset import CLWDDataset
-from .lvw_dataset import LVWDataset
-from .clwd_logo27_dataset import CLWD_LOGO27Dataset
+# from .lvw_dataset import LVWDataset
+# from .clwd_logo27_dataset import CLWD_LOGO27Dataset
 from .COCO import COCO
-from .BIH import BIH
+# from .BIH import BIH
 from .refine_10k_dataset import Refine10kDataset
 from .mask_refine_dataset import MaskRefineDataset
 import importlib
@@ -13,15 +11,15 @@ from datasets.base_dataset import BaseDataset
 
 from ._load_clwd import load_clwd as load_clwd_dataset
 from ._load_10k import load_10k
-from ._load_clwd_logo27 import load_clwd_logo27_dataset
+# from ._load_clwd_logo27 import load_clwd_logo27_dataset
 
 from ._load_refine10k import load_refine10k_dataset
 from ._load_mask_refine import load_mask_refine_dataset
 
 from .dilate_dataset import DilateDataset
 from .alpha1_dataset import AlphaDataset
-from .clwd_dataset_np import CLWDNPDataset
-from .alpha1_dataset_np import AlphaNPDataset
+# from .clwd_dataset_np import CLWDNPDataset
+# from .alpha1_dataset_np import AlphaNPDataset
 
 from torch.utils.data import DataLoader
 import os

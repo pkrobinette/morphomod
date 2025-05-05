@@ -8,10 +8,10 @@ from _src_slbr import networks as slbr_nets
 from _src_splitnet import models as splitnet_nets
 from _src_wdnet.WDNet import generator, generator_mask
 
-from .unet_refine import UNetRefine
+# from .unet_refine import UNetRefine
 from .unet_refine_stack import UNetRefineStack
 from .unet_refine_semseg import UNetRefineSemseg
-from .deeplab_refine_semseg import DeepLabRefineSemseg
+# from .deeplab_refine_semseg import DeepLabRefineSemseg
 from .morphomod import MorphoModel, dilate as Dilate
 
 

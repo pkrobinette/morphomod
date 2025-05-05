@@ -5,14 +5,20 @@ import torch.nn as nn
 from diffusers import StableDiffusionInpaintPipeline, StableDiffusionXLInpaintPipeline
 from torchvision import transforms as T
 from typing import Union
+from huggingface_hub import login
+from diffusers import FluxFillPipeline
+
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 inpaint_mods = {
     'SD2': "stabilityai/stable-diffusion-2-inpainting",
     'SDXL': "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
-    'LaMa': "tbd"
+    'LaMa': "tbd",
+    'FLUX': "black-forest-labs/FLUX.1-Fill-dev"
 }
+
+# TOKEN=<FILL IN>
 
 
 class MorphoModel(nn.Module):
@@ -42,6 +48,12 @@ class MorphoModel(nn.Module):
                 "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
                 torch_dtype=torch.float16,
                 variant="fp16"
+            ).to(DEVICE)
+        elif inpaint == "FLUX": 
+            login(token=TOKEN)
+            self.pipe = FluxFillPipeline.from_pretrained(
+                "black-forest-labs/FLUX.1-Fill-dev", 
+                torch_dtype=torch.bfloat16
             ).to(DEVICE)
         else:
             raise ValueError("Model not implemented.")
