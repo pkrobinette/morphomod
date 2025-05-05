@@ -9,7 +9,7 @@ import random
 import glob
 
 class AlphaDataset(torch.utils.data.Dataset):
-    def __init__(self, is_train: str, path: str):
+    def __init__(self, is_train: str, path: str, num_samples = None):
 
         is_train = is_train == "train"
         if is_train:
@@ -28,6 +28,12 @@ class AlphaDataset(torch.utils.data.Dataset):
             T.Resize((256, 256)),
             T.ToTensor()
         ])
+        #
+        # sort images
+        #
+        self.ids.sort()
+        if num_samples:
+            self.ids = self.ids[:num_samples]
 
         print("\n\n==> Num images: ", len(self.ids))
         
@@ -48,6 +54,7 @@ class AlphaDataset(torch.utils.data.Dataset):
         data = {
             'image': image,
             'mask': mask,
+            'id': imid
         }
 
         return data

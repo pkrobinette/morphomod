@@ -60,6 +60,7 @@ def get_args():
     parser.add_argument("--fill", type=str, default=None, help="['black', 'background']==> How to fill in the wm prior to generation.")
     parser.add_argument("--num_steps", type=int, default=50, help="number of inference steps during in-painting.")
     parser.add_argument("--inpaint_mod", type=str, default='SD2', help="The inpainting model to use.")
+    parser.add_argument("--num_samples", type=int, default=None, help="Number of test samples to evaluate.")
 
     args = parser.parse_args()
 
@@ -75,7 +76,7 @@ def get_dataset(is_train: str, args: argparse.Namespace):
         DataLoader
     """
     if args.dataset == "CLWD":
-        return datasets.load_clwd(is_train=is_train, batch_size=args.batch_size, shuffle=False, path=args.data_path)
+        return datasets.load_clwd(is_train=is_train, batch_size=args.batch_size, shuffle=False, path=args.data_path, num_samples=args.num_samples)
     elif args.dataset == "10kgray":
         return datasets.load_10kgray(is_train=is_train, batch_size=args.batch_size, shuffle=False, path=args.data_path)
     elif args.dataset == "10kmid":
@@ -84,7 +85,7 @@ def get_dataset(is_train: str, args: argparse.Namespace):
         return datasets.load_10khigh(is_train=is_train, batch_size=args.batch_size, shuffle=False, path=args.data_path)
     elif args.dataset == "alpha1-S":
         assert "alpha1-S" in args.data_path, "Whoops, did you mean alpha1-L?. Datapath does not match data selection."
-        return datasets.load_alpha1_dataset(is_train=is_train, batch_size=args.batch_size, shuffle=False, path=args.data_path)
+        return datasets.load_alpha1_dataset(is_train=is_train, batch_size=args.batch_size, shuffle=False, path=args.data_path, num_samples=args.num_samples)
     elif args.dataset == "alpha1-L":
         assert "alpha1-L" in args.data_path, "Whoops, did you mean alpha1-S?. Datapath does not match data selection."
         return datasets.load_alpha1_dataset(is_train=is_train, batch_size=args.batch_size, shuffle=False, path=args.data_path)
@@ -137,6 +138,7 @@ def main(args):
     for batch in tqdm.tqdm(dataloader):
         wm = batch['image'].to(DEVICE)
         mask = batch['mask'].to(DEVICE)
+        ids = batch['id']
 
         if "morphomod" in args.model_type:
             with torch.no_grad():
@@ -185,13 +187,13 @@ def main(args):
                 psnrsw.update(psnrwx, 1)
                 lpipsw.update(lpipwx, 1)
 
-        for im, m, gen_m, fin, raw, fx in zip(wm, mask, immask, imfinal, raw_out, fill_x):
-            save_image(m.float(), osp.join(args.expr_path, "_images", "mask", f"{cnt}.png"))
-            save_image(gen_m.float(), osp.join(args.expr_path, "_images", "gen_mask", f"{cnt}.png"))
-            save_image(im, osp.join(args.expr_path, "_images", "wm", f"{cnt}.jpg"))
-            save_image(fin, osp.join(args.expr_path, "_images", "imfinal", f"{cnt}.jpg"))
-            save_image(raw, osp.join(args.expr_path, "_images", "raw_out", f"{cnt}.jpg"))
-            save_image(fx, osp.join(args.expr_path, "_images", "fill_x", f"{cnt}.jpg"))
+        for im, m, gen_m, fin, raw, fx, imid in zip(wm, mask, immask, imfinal, raw_out, fill_x, ids):
+            save_image(m.float(), osp.join(args.expr_path, "_images", "mask", f"{imid}.png"))
+            save_image(gen_m.float(), osp.join(args.expr_path, "_images", "gen_mask", f"{imid}.png"))
+            save_image(im, osp.join(args.expr_path, "_images", "wm", f"{imid}.jpg"))
+            save_image(fin, osp.join(args.expr_path, "_images", "imfinal", f"{imid}.jpg"))
+            save_image(raw, osp.join(args.expr_path, "_images", "raw_out", f"{imid}.jpg"))
+            save_image(fx, osp.join(args.expr_path, "_images", "fill_x", f"{imid}.jpg"))
             cnt += 1
         #
         # release memory

@@ -10,7 +10,7 @@ from .base_dataset import get_transform
 import random
 
 class CLWDDataset(torch.utils.data.Dataset):
-    def __init__(self, is_train, args):
+    def __init__(self, is_train, args, num_samples=None):
         
         args.is_train = is_train == 'train'
         self.train = args.is_train
@@ -53,6 +53,15 @@ class CLWDDataset(torch.utils.data.Dataset):
             self.ids.append(file.strip('.jpg'))
         cv2.setNumThreads(0)
         cv2.ocl.setUseOpenCL(False)
+        #
+        # sort images
+        #
+        self.ids.sort()
+        if num_samples:
+            self.ids = self.ids[num_samples]
+
+        print("\n\n==> Num images: ", len(self.ids))
+        
         
         
        
@@ -78,7 +87,7 @@ class CLWDDataset(torch.utils.data.Dataset):
         alpha = cv2.imread(self.alpha_path%img_id)
         alpha = alpha[:, :, 0].astype(np.float32) / 255.
                 
-        return {'J': img_J, 'I': img_I, 'watermark': w, 'mask':mask, 'alpha':alpha, 'img_path':self.imageJ_path%img_id}
+        return {'J': img_J, 'I': img_I, 'watermark': w, 'mask':mask, 'alpha':alpha, 'img_path':self.imageJ_path%img_id, 'id': img_id}
 
 
     def __getitem__(self, index):
@@ -102,7 +111,8 @@ class CLWDDataset(torch.utils.data.Dataset):
                 'wm': w,
                 'mask': mask,
                 'alpha':alpha,
-                'img_path':sample['img_path']
+                'img_path':sample['img_path'],
+                'id': sample['id']
             }
         else:
             data = {
@@ -110,6 +120,7 @@ class CLWDDataset(torch.utils.data.Dataset):
                 'target': I,
                 'mask': mask,
                 'img_path':sample['img_path']
+                'id': sample['id']
             }
             
         return data

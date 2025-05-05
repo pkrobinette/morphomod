@@ -29,8 +29,8 @@ from typing import Union
 __all__ = ('CLWDDataset', 'LVWDataset', 'COCO','BIH', 'Refine10kDataset', 'MaskRefineDataset', 'CLWD_LOGO27Dataset')
  
 
-def load_clwd(is_train: str = "test", batch_size: int = 8, shuffle=True, path=None):
-    return load_clwd_dataset(is_train=is_train, batch_size=batch_size, shuffle=shuffle, path=path)
+def load_clwd(is_train: str = "test", batch_size: int = 8, shuffle=True, path=None, num_samples=None):
+    return load_clwd_dataset(is_train=is_train, batch_size=batch_size, shuffle=shuffle, path=path, num_samples=num_samples)
 
 def load_10kgray(is_train: str = "test", batch_size: int = 8, shuffle=True, path=None):
     return load_10k(is_train=is_train, mode="gray", batch_size=batch_size, shuffle=shuffle, path=path)
@@ -74,9 +74,10 @@ def load_alpha1_dataset(
     batch_size: int=8, 
     shuffle: bool = True, 
     num_workers: int = 2, 
-    pin_memory: bool = True
+    pin_memory: bool = True,
+    num_samples = None
     ):
-    dataset = AlphaDataset(is_train, path)
+    dataset = AlphaDataset(is_train, path, num_samples)
 
     return DataLoader(
         dataset, 

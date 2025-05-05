@@ -23,6 +23,7 @@ def load_clwd(
     num_workers: int = 2, 
     pin_memory: bool = True,
     path: Optional[str] = None,
+    num_samples = None
 ):
     """
     Load the CLWD Dataset.
@@ -33,11 +34,12 @@ def load_clwd(
         num_workers: The number of worker threads to use for loading data.
         pin_memory: If True, data will be loaded into pinned memory for faster GPU transfer.
         path: path of the dataset.
+        num_samples: number of samples
     """
     args = get_default_config()
     if path:
         args.dataset_dir = path
-    dataset = datasets.CLWDDataset(is_train, args)
+    dataset = datasets.CLWDDataset(is_train, args, num_samples)
 
     return DataLoader(
         dataset, 
