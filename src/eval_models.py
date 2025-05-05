@@ -139,10 +139,11 @@ def main(args):
         mask = batch['mask'].to(DEVICE)
 
         if "morphomod" in args.model_type:
-            imfinal, immask, raw_out, fill_x = model.forward_w_gt(
-                wm, mask, args.dilate, args.prompt,
-                fill=args.fill, num_steps=args.num_steps
-            )
+            with torch.no_grad():
+                imfinal, immask, raw_out, fill_x = model.forward_w_gt(
+                    wm, mask, args.dilate, args.prompt,
+                    fill=args.fill, num_steps=args.num_steps
+                )
         else:
             raise ValueError("whoops wrong model.")
 
