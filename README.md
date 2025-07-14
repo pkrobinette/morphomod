@@ -1,4 +1,4 @@
-# MorphoMod: Blind Visible Watermark Removal with Morphological Dilation
+# MorphoMod: Visible Watermark Removal with Morphological Dilation
 These experiments were conducted on a macOS 13.5.2 with an Apple M2 Max processor with 64 GB of memory.
 
 ## Installation
@@ -14,8 +14,6 @@ conda create -n morpho pip python=3.8 && conda activate morpho && pip install -r
 
    c. Alpha1-S and Alpha1-L: *(Due to anonymity, this will be provided for the final publication.)*
    
-   d. Disorient: *(Due to anonymity, this will be provided for the final publication.)*
-
 ## Test
 | Experiment | Script Locations |
 | -------- | -------- |
